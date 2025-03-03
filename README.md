@@ -1,4 +1,12 @@
 # Unlock CN GMS
+
+> [!NOTE]
+> 此版本使用 Magisk v28102 新特性，抹除 permissions 文件,支持 APatch/KernelSU。
+> 
+> 使用体验与原版无异。
+> 
+> 由于 Magisk 的挂载仅支持 system 目录，OPPO/OnePlus/Realme 的 permissions 文件路径不会被 Magisk 挂载， 所以处理方式与原版保持一致。
+
 The GMS is restricted in China on some devices, because of a configuration file located in `/system/etc/permissions/services.cn.google.xml`.
 by this restriction, you can not enable `Google Location History` and the `Google Map Timeline` function can not use either.
 
