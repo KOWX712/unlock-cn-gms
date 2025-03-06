@@ -1,4 +1,12 @@
 # Unlock CN GMS
+
+> [!NOTE]
+> 此版本使用 Magisk v28102 新特性，抹除 permissions 文件,支持 APatch/KernelSU。
+> 
+> 使用体验与原版无异。
+> 
+> 不支持自动挂载的将尝试使用 [mountify standalone](https://github.com/backslashxx/mountify/blob/standalone-script/global_mount.sh) 挂载，如果都不支持则使用原版的处理方式
+
 The GMS is restricted in China on some devices, because of a configuration file located in `/system/etc/permissions/services.cn.google.xml`.
 by this restriction, you can not enable `Google Location History` and the `Google Map Timeline` function can not use either.
 

@@ -1,17 +1,20 @@
-#!/system/bin/sh
+#!/bin/sh
 
 # Function to find the first available XML permission file
+OLD_MODPATH="/data/adb/modules/com.fei_ke.unlockcngms"
 find_origin() {
-    for file in \
-        /system/etc/permissions/services.cn.google.xml \
-        /system/etc/permissions/com.oppo.features.cn_google.xml \
-        /vendor/etc/permissions/services.cn.google.xml \
-        /product/etc/permissions/services.cn.google.xml \
-        /product/etc/permissions/cn.google.services.xml \
-        /my_bigball/etc/permissions/oplus_google_cn_gms_features.xml \
-        /my_product/etc/permissions/oplus_google_cn_gms_features.xml \
-        /my_heytap/etc/permissions/my_heytap_cn_gms_features.xml; do
-        if [ -e "$file" ]; then
+    files="
+    /system/etc/permissions/services.cn.google.xml
+    /system/etc/permissions/com.oppo.features.cn_google.xml
+    /vendor/etc/permissions/services.cn.google.xml
+    /product/etc/permissions/services.cn.google.xml
+    /product/etc/permissions/cn.google.services.xml
+    /my_bigball/etc/permissions/oplus_google_cn_gms_features.xml
+    /my_product/etc/permissions/oplus_google_cn_gms_features.xml
+    /my_heytap/etc/permissions/my_heytap_cn_gms_features.xml
+    "
+    for file in $files; do
+        if [ -e "$file" ] || [ -e "$OLD_MODPATH$file" ] || [ -e "$OLD_MODPATH/system$file" ]; then
             echo "$file"
             return
         fi
@@ -19,39 +22,68 @@ find_origin() {
     abort "No suitable permission file found!"
 }
 
+handle_target() {
+    target=$1
+    origin=$2
+    mkdir -p $(dirname $target)
+    if [ "$SUPPORT_REMOVE" = 1 ] || [ "$MEETS_MOUNTIFY" = 1 ]; then
+        mknod $target c 0 0
+        setfattr -n trusted.overlay.opaque -v y $target
+    else
+        cp -f $origin $target
+        sed -i '/cn.google.services/d' $target
+        sed -i '/services_updater/d' $target
+    fi
+}
+
+mountify_check() {
+    if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
+        MEETS_OVERLAYFS=1
+    fi
+    [ -w /mnt ] && MNT_FOLDER=/mnt
+    [ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
+    testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
+    rm $testfile > /dev/null 2>&1 
+    mknod "$testfile" c 0 0 > /dev/null 2>&1 
+    if setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then 
+        MEETS_TMPFS_XATTR=1
+        rm $testfile > /dev/null 2>&1
+    fi
+    if [ "$MEETS_OVERLAYFS" = 1 ] && [ "$MEETS_TMPFS_XATTR" = 1 ]; then
+        MEETS_MOUNTIFY=1
+    fi
+}
+
+# Check eligible whiteout support
+if [ -z "$APATCH" ] && [ -z "$KSU" ] && [ "$MAGISK_VER_CODE" -lt 28102 ]; then
+    SUPPORT_REMOVE=0
+else
+    SUPPORT_REMOVE=1
+fi
+
+# Check eligible for mountify support
+mountify_check
+if [ "$MEETS_MOUNTIFY" = 1 ]; then
+    mv -f $MODPATH/mountify.sh $MODPATH/post-fs-data.sh
+else
+    rm -f $MODPATH/mountify.sh
+fi
+
 origin=$(find_origin)
 
-if [[ $origin == *my_bigball* ]]; then
-    target=$MODPATH/oplus_google_cn_gms_features.xml
-    echo -e '#!/system/bin/sh\nmount -o ro,bind ${0%/*}/oplus_google_cn_gms_features.xml /my_bigball/etc/permissions/oplus_google_cn_gms_features.xml' > $MODPATH/post-fs-data.sh
-    # echo 'sleep 60; umount /my_bigball/etc/permissions/oplus_google_cn_gms_features.xml' > $MODPATH/service.sh
-elif [[ $origin == *my_product* ]]; then
-    target=$MODPATH/oplus_google_cn_gms_features.xml
-    echo -e '#!/system/bin/sh\nmount -o ro,bind ${0%/*}/oplus_google_cn_gms_features.xml /my_product/etc/permissions/oplus_google_cn_gms_features.xml' > $MODPATH/post-fs-data.sh
-elif [[ $origin == *my_heytap* ]]; then
-    target=$MODPATH/my_heytap_cn_gms_features.xml
-    echo -e '#!/system/bin/sh\nmount -o ro,bind ${0%/*}/my_heytap_cn_gms_features.xml /my_heytap/etc/permissions/my_heytap_cn_gms_features.xml' > $MODPATH/post-fs-data.sh
-    if [[ -e /my_heytap/etc/permissions/my_heytap_cn_features.xml ]]; then
-        echo -e '\nmount -o ro,bind ${0%/*}/my_heytap_cn_features.xml /my_heytap/etc/permissions/my_heytap_cn_features.xml' >> $MODPATH/post-fs-data.sh
-        heytap_cn_features_orgin=/my_heytap/etc/permissions/my_heytap_cn_features.xml
-        heytap_cn_features_target=$MODPATH/my_heytap_cn_features.xml
+if [ $origin = *my_bigball* ] || [ $origin = *my_product* ]; then
+    SUPPORT_REMOVE=0
+    handle_target $MODPATH/oplus_google_cn_gms_features.xml $origin
+elif [ $origin = *my_heytap* ]; then
+    SUPPORT_REMOVE=0
+    handle_target $MODPATH/my_heytap_cn_gms_features.xml $origin
+    if [ -e /my_heytap/etc/permissions/my_heytap_cn_features.xml ]; then
+        handle_target $MODPATH/my_heytap_cn_features.xml /my_heytap/etc/permissions/my_heytap_cn_features.xml
     fi
-elif [[ $origin == *system* ]]; then
-    target=$MODPATH$origin    
+elif [ $origin = *system* ]; then
+    handle_target $MODPATH$origin $origin
 else
-    target=$MODPATH/system$origin
+    handle_target $MODPATH/system$origin $origin
 fi
 
-mkdir -p $(dirname $target)
-cp -f $origin $target
-sed -i '/cn.google.services/d' $target
-sed -i '/services_updater/d' $target
-ui_print "modify $origin"
-
-if [[ -e $heytap_cn_features_orgin ]]; then
-mkdir -p $(dirname $heytap_cn_features_target)
-cp -f $heytap_cn_features_orgin $heytap_cn_features_target
-sed -i '/cn.google.services/d' $heytap_cn_features_target
-sed -i '/services_updater/d' $heytap_cn_features_target
-ui_print "modify $heytap_cn_features_orgin"
-fi
+[ "$SUPPORT_REMOVE" = 1 ] && rm -f $MODPATH/post-fs-data.sh
