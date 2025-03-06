@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Function to find the first available XML permission file
+OLD_MODPATH="/data/adb/modules/com.fei_ke.unlockcngms"
 find_origin() {
     files="
     /system/etc/permissions/services.cn.google.xml
@@ -12,7 +13,7 @@ find_origin() {
     /my_heytap/etc/permissions/my_heytap_cn_gms_features.xml
     "
     for file in $files; do
-        if [ -e "$file" ]; then
+        if [ -e "$file" ] || [ -e "$OLD_MODPATH$file" ] || [ -e "$OLD_MODPATH/system$file" ]; then
             echo "$file"
             return
         fi
