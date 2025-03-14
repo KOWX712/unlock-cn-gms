@@ -27,6 +27,7 @@ handle_target() {
     mkdir -p $(dirname $target)
     if [ "$SUPPORT_REMOVE" = 1 ] || [ "$MEETS_MOUNTIFY" = 1 ]; then
         mknod $target c 0 0
+        setfattr -n trusted.overlay.opaque -v y $target
     else
         cp -f $origin $target
         sed -i '/cn.google.services/d' $target
