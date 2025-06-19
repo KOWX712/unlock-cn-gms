@@ -1,0 +1,50 @@
+name: release
+
+on:
+  push:
+    branches: master
+    paths:
+      - 'update.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set variables
+        run: |
+          echo "VERSION=$(jq -r .version update.json)" >> $GITHUB_ENV
+          CHANGELOG=$(git diff HEAD^ HEAD -- CHANGELOG.md | grep '^+[^+]' | sed 's/^+//; /^#/d')
+          echo "CHANGELOG<<CHANGELOG_EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "CHANGELOG_EOF" >> $GITHUB_ENV
+
+      - name: Zip module
+        run: |
+          zip -r "unlock-cn-gms.zip" . -x ".*" -x "CHANGELOG.md" -x "README.md" -x "update.json"
+
+      - name: Validate release
+        run: |
+          git fetch --tags
+          if git tag | grep -qx "^${{ env.VERSION }}"; then
+            echo "RELEASE=false" >> $GITHUB_ENV
+          else
+            echo "RELEASE=true" >> $GITHUB_ENV
+          fi
+
+      - name: Create release
+        if: env.RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: "unlock-cn-gms.zip"
+          tag_name: "${{ env.VERSION }}"
+          name: "${{ env.VERSION }}"
+          body: "${{ env.CHANGELOG }}"
+          draft: false
+          prerelease: false
