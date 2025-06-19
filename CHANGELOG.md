@@ -2,6 +2,9 @@
 
 ## Changelog
 
+# v4.3
+- 修复flyme11模块下多一层system的问题
+
 ## v4.2
 - 新增 ColorOS 15.0.1 支持<br>Add support for ColorOS 15.0.1
 

@@ -1,6 +1,7 @@
 id=com.fei_ke.unlockcngms
 name=Unlock CN GMS
-version=v3.6
-versionCode=35
-author=fei-ke
+version=v4.2
+versionCode=43
+author=fei-ke, KOWX712
 description= 去除国行手机对 GMS 的阉割（比如无法使用 Google Location History 等等）
+updateJson=https://raw.githubusercontent.com/KOWX712/unlock-cn-gms/master/update.json
