@@ -2,6 +2,11 @@
 
 ## Changelog
 
+# v4.4
+- 修复在非 真我 等 my_heytap 设备下同样会执行相关逻辑的问题 (fei-ke#27)
+- 在安装了 mountify 的情况下将交由 mountify 来挂载。
+- 更新 [mountify standalone](https://github.com/backslashxx/mountify/commit/019a216866fae4ffc0c65adcf9a98228dc67a87d)
+
 # v4.3
 - 修复flyme11模块下多一层system的问题
 
