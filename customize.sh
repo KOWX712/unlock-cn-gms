@@ -26,7 +26,7 @@ handle_target() {
     origin=$2
     DIR_OF_TARGET="$(dirname $target)"
     mkdir -p "$DIR_OF_TARGET"
-    if [ "$SUPPORT_REMOVE" = 1 ] || [ "$MEETS_MOUNTIFY" = 1 ]; then
+    if [ "$SUPPORT_REMOVE" = 1 ] || [ "$MEETS_MOUNTIFY_STANDALONE" = 1 ] || [ "$HAS_MOUNTIFY" = 1 ]; then
         mknod "$target" c 0 0
         setfattr -n trusted.overlay.opaque -v y "$target"
     else
@@ -50,7 +50,16 @@ mountify_check() {
         rm $testfile > /dev/null 2>&1
     fi
     if [ "$MEETS_OVERLAYFS" = 1 ] && [ "$MEETS_TMPFS_XATTR" = 1 ]; then
-        MEETS_MOUNTIFY=1
+        MEETS_MOUNTIFY_STANDALONE=1
+    else
+        MEETS_MOUNTIFY_STANDALONE=0
+    fi
+
+    mountify_dir="/data/adb/modules/mountify"
+    if [ -d "$mountify_dir" ] && [ ! -f "$mountify_dir/disable" ] && [ ! -f "$mountify_dir/remove" ]; then
+        HAS_MOUNTIFY=1
+    else
+        HAS_MOUNTIFY=0
     fi
 }
 
@@ -63,9 +72,7 @@ fi
 
 # Check eligible for mountify support
 mountify_check
-if [ "$MEETS_MOUNTIFY" = 1 ]; then
-    mv -f "$MODPATH/mountify.sh" "$MODPATH/post-fs-data.sh"
-else
+if [ ! "$MEETS_MOUNTIFY_STANDALONE" = 1 ]; then
     rm -f "$MODPATH/mountify.sh"
 fi
 
