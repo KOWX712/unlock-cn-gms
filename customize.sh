@@ -2,8 +2,7 @@
 
 # Function to find the first available XML permission file
 OLD_MODPATH="/data/adb/modules/com.fei_ke.unlockcngms"
-find_origin() {
-    files="/system/etc/permissions/services.cn.google.xml
+FILES="/system/etc/permissions/services.cn.google.xml
 /system/etc/permissions/com.oppo.features.cn_google.xml
 /vendor/etc/permissions/services.cn.google.xml
 /product/etc/permissions/services.cn.google.xml
@@ -12,10 +11,10 @@ find_origin() {
 /my_product/etc/permissions/oplus_google_cn_gms_features.xml
 /my_heytap/etc/permissions/my_heytap_cn_gms_features.xml"
 
-    for file in $files; do
+find_origin() {
+    for file in $FILES; do
         if [ -e "$file" ] || [ -e "$OLD_MODPATH$file" ] || [ -e "$OLD_MODPATH/system$file" ]; then
             echo "$file"
-            return
         fi
     done
     abort "No suitable permission file found!"
@@ -80,12 +79,12 @@ origin=$(find_origin)
 
 if [ $origin = *my_bigball* ] || [ $origin = *my_product* ]; then
     SUPPORT_REMOVE=0
-    handle_target "$MODPATH/oplus_google_cn_gms_features.xml" "$origin"
+    handle_target "$MODPATH$origin" "$origin"
 elif [ $origin = *my_heytap* ]; then
     SUPPORT_REMOVE=0
-    handle_target "$MODPATH/my_heytap_cn_gms_features.xml" "$origin"
+    handle_target "$MODPATH$origin" "$origin"
     if [ -e "/my_heytap/etc/permissions/my_heytap_cn_features.xml" ]; then
-        handle_target "$MODPATH/my_heytap_cn_features.xml" "/my_heytap/etc/permissions/my_heytap_cn_features.xml"
+        handle_target "$MODPATH/my_heytap/etc/permissions/my_heytap_cn_features.xml" "/my_heytap/etc/permissions/my_heytap_cn_features.xml"
     fi
 elif [ $origin = *system* ]; then
     handle_target "$MODPATH$origin" "$origin"
@@ -93,4 +92,4 @@ else
     handle_target "$MODPATH/system$origin" "$origin"
 fi
 
-[ "$SUPPORT_REMOVE" = 1 ] && rm -f "$MODPATH/post-fs-data.sh"
+[ "$SUPPORT_REMOVE" = 1 ] && rm -f "$MODPATH/post-fs-data.sh" "$MODPATH/mountify.sh"
