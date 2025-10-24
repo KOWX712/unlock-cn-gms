@@ -2,6 +2,9 @@
 
 ## Changelog
 
+## v4.5
+- 修复文件未被 mountify 挂载问题。
+
 ## v4.4
 - 修复在非 真我 等 my_heytap 设备下同样会执行相关逻辑的问题 (fei-ke#27)
 - 在安装了 mountify 的情况下将交由 mountify 来挂载。
