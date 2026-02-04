@@ -2,6 +2,9 @@
 
 ## Changelog
 
+## v4.6
+- 适配 vivo / IQOO 的 originos
+
 ## v4.5
 - 修复文件未被 mountify 挂载问题。
 
